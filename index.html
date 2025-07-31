@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plano Alimentar Interativo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutral Harmony -->
+    <!-- Application Structure Plan: A single-page application with top navigation that smoothly scrolls to different sections: Plano Diário, Orientações, Receitas, and Lista de Compras. The default view is the 'Plano Diário', as it's the most frequently used. This task-oriented design prioritizes user needs over the PDF's linear structure. Meal options are handled by interactive buttons within each meal card to reduce clutter and focus the user's attention, making daily planning more intuitive and efficient. -->
+    <!-- Visualization & Content Choices: Report Info: Meal options -> Goal: Organize/Compare -> Presentation: Interactive cards with toggle buttons -> Interaction: Click to update card content -> Justification: Simplifies choice-making. Report Info: Plate composition -> Goal: Inform -> Viz: Chart.js Donut Chart -> Interaction: Hover for details -> Justification: More impactful than text. Report Info: Recipes -> Goal: Organize -> Presentation: Grid of clickable cards -> Interaction: Click to reveal details -> Justification: Clean, scannable layout. Report Info: Shopping List -> Goal: Organize/Interact -> Presentation: Checkable list -> Interaction: Click checkboxes -> Justification: Adds utility. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            margin: auto;
+            height: 300px;
+            max-height: 350px;
+            width: 100%;
+            max-width: 350px;
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+        }
+        .nav-link.active {
+            color: #ffffff;
+            background-color: #059669;
+        }
+        .meal-option-btn {
+            transition: all 0.3s ease;
+        }
+        .meal-option-btn.active {
+            background-color: #059669;
+            color: #ffffff;
+            border-color: #059669;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-slate-800">
+
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3">
+            <h1 class="text-2xl md:text-3xl font-bold text-emerald-700 text-center">Plano Alimentar Interativo</h1>
+            <p class="text-center text-slate-500">Seu guia de nutrição por Tatiane Alves (CRN 45368)</p>
+        </div>
+        <nav class="bg-emerald-600">
+            <div class="container mx-auto flex justify-center items-center space-x-2 sm:space-x-4 p-2 overflow-x-auto">
+                <a href="#plano" class="nav-link active text-white font-semibold py-2 px-3 rounded-md text-sm sm:text-base">Plano Diário</a>
+                <a href="#orientacoes" class="nav-link text-emerald-100 hover:bg-emerald-700 hover:text-white font-semibold py-2 px-3 rounded-md text-sm sm:text-base">Orientações</a>
+                <a href="#receitas" class="nav-link text-emerald-100 hover:bg-emerald-700 hover:text-white font-semibold py-2 px-3 rounded-md text-sm sm:text-base">Receitas</a>
+                <a href="#lista" class="nav-link text-emerald-100 hover:bg-emerald-700 hover:text-white font-semibold py-2 px-3 rounded-md text-sm sm:text-base">Lista de Compras</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8">
+
+        <section id="plano" class="mb-12 scroll-mt-28">
+            <h2 class="text-3xl font-bold text-slate-800 mb-2">Plano Diário</h2>
+            <p class="text-slate-600 mb-6">Esta seção apresenta suas opções de refeições diárias. Clique nos botões 'Opção 1' ou 'Opção 2' em cada cartão para ver os detalhes e montar seu cardápio do dia.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div id="cafe" class="bg-white p-6 rounded-xl shadow-lg"></div>
+                <div id="lanche" class="bg-white p-6 rounded-xl shadow-lg"></div>
+                <div id="almoco" class="bg-white p-6 rounded-xl shadow-lg"></div>
+                <div id="jantar" class="bg-white p-6 rounded-xl shadow-lg"></div>
+                <div id="ceia" class="bg-white p-6 rounded-xl shadow-lg md:col-span-2"></div>
+            </div>
+        </section>
+
+        <section id="orientacoes" class="mb-12 scroll-mt-28">
+            <h2 class="text-3xl font-bold text-slate-800 mb-2">Orientações Nutricionais</h2>
+             <p class="text-slate-600 mb-6">Aqui você encontra as diretrizes gerais para o sucesso do seu plano, incluindo a composição ideal do prato, hidratação e outras dicas importantes.</p>
+            <div class="bg-white p-6 rounded-xl shadow-lg">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="font-bold text-xl mb-4 text-emerald-700">O Prato Ideal</h3>
+                        <div class="chart-container">
+                            <canvas id="plateChart"></canvas>
+                        </div>
+                        <p class="text-center mt-4 text-sm text-slate-500">Mantenha esta proporção em seu almoço e jantar para uma refeição balanceada.</p>
+                    </div>
+                    <div class="space-y-6">
+                        <div>
+                            <h4 class="font-semibold text-lg">🍽️ Organização das Refeições</h4>
+                            <ul class="list-disc list-inside text-slate-600 mt-2 space-y-1">
+                                <li>Realize de 5 a 6 refeições por dia para manter a glicemia estável.</li>
+                                <li>Mantenha horários regulares para maior consistência.</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-lg">🥦 Escolhas Alimentares</h4>
+                            <ul class="list-disc list-inside text-slate-600 mt-2 space-y-1">
+                                <li>Aumente o consumo de fibras (legumes, verduras, grãos integrais).</li>
+                                <li>Evite açúcares, doces industrializados, frituras e ultraprocessados.</li>
+                                <li>Prefira gorduras saudáveis (azeite, abacate, castanhas).</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-lg">💧 Hidratação e Suplementação</h4>
+                            <ul class="list-disc list-inside text-slate-600 mt-2 space-y-1">
+                                <li>Beba de 2,5 a 3 litros de água por dia.</li>
+                                <li>Use 3g de creatina monohidratada diariamente, com bastante água.</li>
+                            </ul>
+                        </div>
+                         <div>
+                            <h4 class="font-semibold text-lg">🏋️ Atividade Física</h4>
+                            <ul class="list-disc list-inside text-slate-600 mt-2 space-y-1">
+                                <li>Treino de força é essencial para o ganho de massa muscular.</li>
+                                <li>O sono de qualidade é crítico para a recuperação e crescimento muscular.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="receitas" class="mb-12 scroll-mt-28">
+            <h2 class="text-3xl font-bold text-slate-800 mb-2">Livro de Receitas</h2>
+            <p class="text-slate-600 mb-6">Explore receitas saudáveis e deliciosas que se encaixam no seu plano. Clique em uma receita para ver os ingredientes e o modo de preparo.</p>
+            <div id="recipes-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </section>
+
+        <section id="lista" class="scroll-mt-28">
+            <h2 class="text-3xl font-bold text-slate-800 mb-2">Lista de Compras</h2>
+            <p class="text-slate-600 mb-6">Use esta lista interativa para organizar suas compras. Marque os itens que você já pegou para facilitar sua ida ao mercado.</p>
+            <div id="shopping-list-container" class="bg-white p-6 rounded-xl shadow-lg grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"></div>
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-800 text-white mt-12 py-6">
+        <div class="container mx-auto text-center">
+            <p>&copy; 2024 Plano Alimentar Interativo. Desenvolvido para Flávia Santana de Araújo.</p>
+            <p class="text-sm text-slate-400">Baseado no plano de Tatiane Alves - Nutricionista CRN 45368.</p>
+        </div>
+    </footer>
+
+    <script>
+        const mealData = {
+            cafe: {
+                title: "Café da Manhã (07:00)",
+                icon: "☕",
+                options: [
+                    { name: "Opção 1", content: "Café s/ açúcar (1 xícara), Leite desnatado (120ml) OU Queijo muçarela (15g), Frango desfiado (50g) OU Ovo mexido (2 un), Pão francês (1 un) OU Pão de forma integral (2 fatias), Mamão (1 fatia), Farelo de aveia (15g) OU Chia (10g) OU Psyllium (10g)." },
+                    { name: "Opção 2", content: "Café s/ açúcar (1 xícara), Leite desnatado (120ml) OU Queijo coalho (15g), Frango desfiado (50g) OU Ovo mexido (2 un) OU Patinho moído (50g), Tapioca (40g) OU Cuscuz de milho (80g), Mamão (1 fatia) OU Kiwi (2 un), Farelo de aveia (10g) OU Chia (10g) OU Psyllium (10g)." }
+                ]
+            },
+            lanche: {
+                title: "Lanches (Manhã 09:00 / Tarde 15:30)",
+                icon: "🍎",
+                options: [
+                    { name: "Manhã", content: "Whey protein (15g) com Banana (1 un) OU Kiwi (2 un) OU Maçã (1 un) OU Morango (10 un) OU Uva (10 un) OU Manga (1 un)." },
+                    { name: "Tarde - Opção 1", content: "Iogurte zero (200ml), Granola (15g) OU Chia (10g), Uvas ou morangos (10 un)." },
+                    { name: "Tarde - Opção 2", content: "Salada de frutas (200ml), Granola s/ açúcar (15g) OU Chia (10g) OU Farinha de linhaça (10g)." },
+                    { name: "Tarde - Opção 3", content: "Sanduíche Natural: Pão integral (2 fatias) OU Rap10 (1 un), Frango desfiado (25g), Requeijão light (20g) OU Queijo muçarela (15g), com alface, cenoura e tomate." }
+                ]
+            },
+            almoco: {
+                title: "Almoço (11:00)",
+                icon: "🥗",
+                options: [
+                    { name: "Opção 1", content: "Salada à vontade, Filé de frango em cubos (55g) OU Patinho grelhado (40g) OU Coxa de frango (50g), Arroz branco (50g) OU Macarrão (50g), Feijão (65g), Sobremesa: Castanha de caju (4 un) OU 1 fatia de laranja." },
+                    { name: "Opção 2", content: "Salada à vontade, Filé de frango grelhado (50g) OU Filé de tilápia (60g) OU Sobrecoxa de frango (50g), Arroz branco (50g) OU Batata doce (80g), Feijão (65g), Sobremesa: Castanha de caju (4 un) OU 1 fatia de laranja." }
+                ]
+            },
+            jantar: {
+                title: "Jantar (19:00)",
+                icon: "🍲",
+                options: [
+                    { name: "Opção 1", content: "Mix de salada, Filé de frango grelhado (50g), Batata doce (42g)." },
+                    { name: "Opção 2", content: "Cuscuz de milho (85g), Peito de frango desfiado (50g), Vinagrete ou salada crua." },
+                    { name: "Opção 3", content: "Pizza fit fake (ver receita), Queijo muçarela light (15g), Frango desfiado (50g) OU Patinho moído (50g), Salada crua (75g)." },
+                    { name: "Opção 4", content: "Crepioca (ver receita), Frango desfiado (50g) OU Patinho moído (50g), Salada crua (75g)." },
+                    { name: "Opção 5", content: "Rap10 (1 un) OU Pão francês (1 un), Frango desfiado (50g), Requeijão light (15g) OU Queijo muçarela (15g), com alface, tomate e cenoura." }
+                ]
+            },
+            ceia: {
+                title: "Ceia (22:00) & Pré-Treino",
+                icon: "🌙",
+                options: [
+                    { name: "Ceia", content: "Chá de hortelã, camomila, erva cidreira ou de sua preferência (1 xícara)." },
+                    { name: "Pré-Treino", content: "Opção leve (30-45 min antes): Banana (1 unidade)." }
+                ]
+            }
+        };
+
+        const recipes = [
+            { name: "Pizza Fit Fake", ingredients: "2 col. sopa de tapioca, 1 ovo, Sal, Molho de tomate, 1 fatia de queijo muçarela light, Orégano, 40g de frango desfiado.", prep: "Misture a goma e o ovo com sal. Despeje na frigideira antiaderente. Deixe firmar, adicione os recheios, espere o queijo derreter e sirva." },
+            { name: "Sanduíche Leve", ingredients: "2 fatias de pão integral, 2 col. sopa de frango desfiado, 1 folha de alface, 2 rodelas de tomate, 1 col. sopa de cenoura ralada, 1 fatia de queijo branco OU 1 col. sopa de requeijão.", prep: "Monte o sanduíche com os ingredientes." },
+            { name: "Almôndega com Aveia", ingredients: "500g de carne moída, 8 col. sopa de aveia, 1 cebola, 2 tomates, 1 ovo, Orégano, Coentro, Sal.", prep: "Misture todos os ingredientes picados e ralados. Forme bolinhas e leve ao forno pré-aquecido por 25 minutos ou doure na frigideira." },
+            { name: "Crepioca", ingredients: "2 col. sopa de tapioca, 1 ovo, 30g de frango desfiado, Sal e temperos.", prep: "Misture a goma, o ovo e os temperos. Despeje na frigideira, espere firmar, adicione o recheio de um lado, dobre e sirva." },
+            { name: "Leite Condensado Fake", ingredients: "1 xícara de leite em pó desnatado, 1/2 xícara de água quente, 1 colher de adoçante culinário.", prep: "Bata tudo no liquidificador por 3-5 minutos. Leve à geladeira por 1 hora para firmar." },
+            { name: "Brigadeiro Fit", ingredients: "1 receita de leite condensado fake, 2-3 col. sopa de cacau em pó, 1 col. chá de óleo de coco (opcional).", prep: "Leve tudo ao fogo baixo, mexendo sempre, por 5-8 minutos, até desgrudar do fundo da panela. Deixe esfriar." }
+        ];
+
+        const shoppingList = {
+            "Grãos e Farinhas": ["Farelo de aveia", "Goma de tapioca", "Semente de chia", "Psyllium", "Farinha de linhaça dourada", "Arroz branco", "Macarrão parafuso", "Cuscuz de milho"],
+            "Proteínas": ["Ovos", "Peito de frango", "Patinho moído", "Filé de tilápia", "Queijo muçarela light", "Requeijão light", "Iogurte zero"],
+            "Frutas": ["Mamão formosa", "Banana", "Uva verde", "Manga", "Morango", "Limão", "Kiwi"],
+            "Legumes e Verduras": ["Alface", "Tomate", "Cenoura", "Beterraba", "Cebola", "Couve", "Batata doce", "Batata inglesa"],
+            "Leguminosas": ["Feijão carioca", "Feijão preto", "Feijão verde"],
+            "Outros": ["Azeite de oliva", "Adoçante (Stevia/Xilitol)", "Granola sem açúcar", "Temperos diversos", "Pão de forma integral", "Pão Francês / Rap 10"]
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            function renderMealCard(mealKey) {
+                const meal = mealData[mealKey];
+                const container = document.getElementById(mealKey);
+                let buttonsHTML = meal.options.map((opt, index) =>
+                    `<button class="meal-option-btn text-sm sm:text-base border-2 border-slate-200 rounded-lg py-1 px-3 ${index === 0 ? 'active' : ''}" data-meal="${mealKey}" data-index="${index}">${opt.name}</button>`
+                ).join('');
+
+                container.innerHTML = `
+                    <h3 class="text-xl font-bold mb-4 flex items-center"><span class="text-2xl mr-2">${meal.icon}</span> ${meal.title}</h3>
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        ${buttonsHTML}
+                    </div>
+                    <div class="meal-content text-slate-600 bg-slate-50 p-3 rounded-lg">
+                        ${meal.options[0].content}
+                    </div>
+                `;
+            }
+
+            Object.keys(mealData).forEach(renderMealCard);
+
+            document.querySelectorAll('.meal-option-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const mealKey = e.target.dataset.meal;
+                    const index = e.target.dataset.index;
+                    const meal = mealData[mealKey];
+                    const container = document.getElementById(mealKey);
+
+                    container.querySelector('.meal-content').innerHTML = meal.options[index].content;
+
+                    container.querySelectorAll('.meal-option-btn').forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+                });
+            });
+
+            const recipesGrid = document.getElementById('recipes-grid');
+            recipes.forEach(recipe => {
+                const card = document.createElement('div');
+                card.className = 'bg-white p-5 rounded-xl shadow-lg cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all';
+                card.innerHTML = `<h4 class="font-bold text-lg text-emerald-700">${recipe.name}</h4>`;
+                card.addEventListener('click', () => {
+                    recipes.forEach(r => r.expanded = false);
+                    recipe.expanded = true;
+                    renderRecipes();
+                });
+
+                if (recipe.expanded) {
+                    card.innerHTML += `
+                        <div class="mt-4 border-t pt-4">
+                            <p class="font-semibold">Ingredientes:</p>
+                            <p class="text-slate-600 text-sm mb-2">${recipe.ingredients}</p>
+                            <p class="font-semibold">Modo de Preparo:</p>
+                            <p class="text-slate-600 text-sm">${recipe.prep}</p>
+                        </div>
+                    `;
+                }
+                recipesGrid.appendChild(card);
+            });
+            
+            function renderRecipes() {
+                recipesGrid.innerHTML = '';
+                 recipes.forEach(recipe => {
+                    const card = document.createElement('div');
+                    card.className = 'bg-white p-5 rounded-xl shadow-lg cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all';
+                    card.innerHTML = `<h4 class="font-bold text-lg text-emerald-700">${recipe.name}</h4>`;
+                    
+                    if (recipe.expanded) {
+                        card.innerHTML += `
+                            <div class="mt-4 border-t pt-4">
+                                <p class="font-semibold">Ingredientes:</p>
+                                <p class="text-slate-600 text-sm mb-2">${recipe.ingredients}</p>
+                                <p class="font-semibold">Modo de Preparo:</p>
+                                <p class="text-slate-600 text-sm">${recipe.prep}</p>
+                            </div>
+                        `;
+                    }
+
+                    card.addEventListener('click', () => {
+                        const wasExpanded = recipe.expanded;
+                        recipes.forEach(r => r.expanded = false);
+                        recipe.expanded = !wasExpanded;
+                        renderRecipes();
+                    });
+
+                    recipesGrid.appendChild(card);
+                });
+            }
+            renderRecipes();
+
+            const shoppingListContainer = document.getElementById('shopping-list-container');
+            Object.keys(shoppingList).forEach(category => {
+                const categoryDiv = document.createElement('div');
+                let itemsHTML = shoppingList[category].map(item => `
+                    <label class="flex items-center space-x-3 text-slate-600">
+                        <input type="checkbox" class="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
+                        <span>${item}</span>
+                    </label>
+                `).join('');
+                categoryDiv.innerHTML = `
+                    <h4 class="font-bold text-lg text-emerald-700 mb-3">${category}</h4>
+                    <div class="space-y-2">${itemsHTML}</div>
+                `;
+                shoppingListContainer.appendChild(categoryDiv);
+            });
+
+            const ctx = document.getElementById('plateChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Legumes e Verduras', 'Proteínas', 'Carboidratos'],
+                    datasets: [{
+                        data: [50, 25, 25],
+                        backgroundColor: ['#10B981', '#F59E0B', '#6366F1'],
+                        borderColor: '#FFFFFF',
+                        borderWidth: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '60%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${context.raw}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('main section');
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 120) {
+                        current = section.getAttribute('id');
+                    }
+                });
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if(link.getAttribute('href').includes(current)) {
+                        link.classList.add('active');
+                    }
+                })
+            });
+            
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    document.querySelector(link.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+
+        });
+    </script>
+</body>
+</html>
